@@ -105,8 +105,9 @@ def get_metrics():
 
     mae = cornac.metrics.MAE()
     rmse = cornac.metrics.RMSE()
-    recall = cornac.metrics.Recall(k=[10, 20])
-    ndcg = cornac.metrics.NDCG(k=[10, 20])
+    recall = cornac.metrics.Recall(k=[5, 10, 20, 30, 100, 200, 500])
+    ndcg = cornac.metrics.NDCG(k=[5, 10, 20, 30, 100, 200, 500])
+    mrr = cornac.metrics.MRR()
     auc = cornac.metrics.AUC()
 
-    return [mae, rmse, recall, ndcg, auc]
+    return [mae, rmse, recall, ndcg, auc, mrr]

@@ -13,24 +13,42 @@ def get_models(variant='small'):
     bo = cornac.models.BaselineOnly(verbose=False)
 
     # Matrix Factorization with biases
-    mf = cornac.models.MF(verbose=False,
+    mf1 = cornac.models.MF(verbose=False,
+                           use_bias=True,
+                           seed=123)
+
+    # Matrix Factorization without biases
+    mf2 = cornac.models.MF(verbose=False,
+                           use_bias=False,
                           seed=123)
 
     # Singular Value Decomposition
     svd = cornac.models.SVD(verbose=False,
                             seed=123)
 
-    # Probabilistic Matrix Factorization
-    pmf = cornac.models.PMF(verbose=False,
+    # Probabilistic Matrix Factorization (linear)
+    pmf1 = cornac.models.PMF(verbose=False,
+                             variant='linear',
+                             seed=123)
+
+    # Probabilistic Matrix Factorization (nonlinear)
+    pmf2 = cornac.models.PMF(verbose=False,
+                             variant='non_linear',
                             seed=123)
 
     # Weighted Matrix Factorization
     wmf = cornac.models.WMF(verbose=False,
                             seed=123)
 
-    # Non-negative Matrix Factorization
-    nmf = cornac.models.NMF(verbose=False,
+    # Non-negative Matrix Factorization (biased)
+    nmf1 = cornac.models.NMF(verbose=False,
+                             use_bias=True,
                             seed=123)
+
+    # Non-negative Matrix Factorization (unbiased)
+    nmf2 = cornac.models.NMF(verbose=False,
+                             use_bias=False,
+                             seed=123)
 
     # Maximum Margin Matrix Factorization
     mmmf = cornac.models.MMMF(verbose=False,
@@ -76,10 +94,10 @@ def get_models(variant='small'):
     #                             seed=123)
 
     if variant == 'small':
-        return [mpop, mf, bpr]
+        return [mpop, wmf, bpr]
     else:
-        return [gavg, mpop, bo, mf, svd,
-                pmf, wmf, nmf, mmmf, bpr,
+        return [gavg, mpop, bo, mf1, mf2, svd,
+                pmf1, pmf2, wmf, nmf1, nmf2, mmmf, bpr,
                 ibpr, wbpr, gmf, mlp, neumf1]
 
 

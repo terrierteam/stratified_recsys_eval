@@ -20,7 +20,7 @@ def get_models(variant='small'):
     # Matrix Factorization without biases
     mf2 = cornac.models.MF(verbose=False,
                            use_bias=False,
-                          seed=123)
+                           seed=123)
 
     # Singular Value Decomposition
     svd = cornac.models.SVD(verbose=False,
@@ -34,7 +34,7 @@ def get_models(variant='small'):
     # Probabilistic Matrix Factorization (nonlinear)
     pmf2 = cornac.models.PMF(verbose=False,
                              variant='non_linear',
-                            seed=123)
+                             seed=123)
 
     # Weighted Matrix Factorization
     wmf = cornac.models.WMF(verbose=False,
@@ -43,7 +43,7 @@ def get_models(variant='small'):
     # Non-negative Matrix Factorization (biased)
     nmf1 = cornac.models.NMF(verbose=False,
                              use_bias=True,
-                            seed=123)
+                             seed=123)
 
     # Non-negative Matrix Factorization (unbiased)
     nmf2 = cornac.models.NMF(verbose=False,

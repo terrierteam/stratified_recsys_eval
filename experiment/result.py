@@ -19,7 +19,9 @@ class STResult(list):
         return '[{}]\n{}'.format(self.model_name, self.table)
 
     def organize(self):
+
         headers = list(self[0].metric_avg_results.keys())
+
         data, index, sizes = [], [], []
         for f, r in enumerate(self):
             data.append([r.metric_avg_results[m] for m in headers])
@@ -35,8 +37,10 @@ class STResult(list):
         unbiased = np.average(
             data[1:], axis=0, weights=weights[1:]) * sum(weights[1:])
 
-        # update the size
-        unbiased[-1] = sizes[0]
+        # weighted average does not meaningful for size
+        for idx, header in enumerate(headers):
+            if header == 'SIZE':
+                unbiased[idx] = sizes[0]
 
         # update the table
         data = np.vstack([data, unbiased])

@@ -43,11 +43,11 @@ class STResult(list):
         data = [[NUM_FMT.format(v) for v in row] for row in data]
         index.extend(['Unbiased'])
 
-        self.table = _table_format(
-            data, headers, index, h_bars=[1, 2, len(data)])
-
         # add unbiased to the list
         self.append(Result(model_name=self[0].model_name,
                            metric_avg_results=OrderedDict(
                                zip(headers, unbiased)),
                            metric_user_results=None))
+
+        self.table = _table_format(
+            data, headers, index, h_bars=[1, 2, len(data)])

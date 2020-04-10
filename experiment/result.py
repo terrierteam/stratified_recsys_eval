@@ -33,6 +33,9 @@ class STResult(list):
         unbiased = np.average(
             data[1:], axis=0, weights=weights[1:]) * sum(weights[1:])
 
+        # update the size
+        unbiased[-1] = sizes[0]
+
         # update the table
         data = np.vstack([data, unbiased])
         data = [[NUM_FMT.format(v) for v in row] for row in data]

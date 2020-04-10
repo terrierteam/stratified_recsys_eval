@@ -59,7 +59,7 @@ def get_models(variant='small'):
                             seed=123)
 
     # Indexable Bayesian Personalized Ranking
-    ibpr = cornac.models.IBPR(verbose=False)
+    # ibpr = cornac.models.IBPR(verbose=False)
 
     # Weighted Bayesian Personalized Ranking
     wbpr = cornac.models.WBPR(verbose=False,
@@ -94,14 +94,14 @@ def get_models(variant='small'):
     #                             seed=123)
 
     if variant == 'small':
-        return [mpop, wmf, bpr]
+        return [mpop, wmf]
     else:
         return [gavg, mpop, bo, mf1, mf2, svd,
-                pmf1, pmf2, wmf, nmf1, nmf2, mmmf, bpr,
-                ibpr, wbpr, gmf, mlp, neumf1]
+                pmf1, pmf2, wmf, nmf1, nmf2, mmmf,
+                bpr, wbpr, gmf, mlp, neumf1]
 
 
-def get_metrics():
+def get_metrics(variant='small'):
 
     mae = cornac.metrics.MAE()
     rmse = cornac.metrics.RMSE()
@@ -110,4 +110,7 @@ def get_metrics():
     mrr = cornac.metrics.MRR()
     auc = cornac.metrics.AUC()
 
-    return [mae, rmse, recall, ndcg, auc, mrr]
+    if variant == 'small':
+        return [ndcg]
+    else:
+        return [mae, rmse, recall, ndcg, auc, mrr]

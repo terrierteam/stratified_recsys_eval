@@ -59,12 +59,14 @@ def get_models(variant='small'):
                             seed=123)
 
     # Non-negative Matrix Factorization (biased)
-    nmf1 = cornac.models.NMF(verbose=False,
+    nmf1 = cornac.models.NMF(name='NMF_bias',
+                             verbose=False,
                              use_bias=True,
                              seed=123)
 
     # Non-negative Matrix Factorization (unbiased)
-    nmf2 = cornac.models.NMF(verbose=False,
+    nmf2 = cornac.models.NMF(name='NMF_nobias',
+                             verbose=False,
                              use_bias=False,
                              seed=123)
 
@@ -123,7 +125,7 @@ def get_metrics(variant='small'):
 
     mae = cornac.metrics.MAE()
     rmse = cornac.metrics.RMSE()
-    recall = cornac.metrics.Recall(k=[5, 10, 20, 30, 100, -1])
+    recall = cornac.metrics.Recall(k=[5, 10, 20, 30, 100])
     ndcg = cornac.metrics.NDCG(k=[5, 10, 20, 30, 100, -1])
     mrr = cornac.metrics.MRR()
     auc = cornac.metrics.AUC()

@@ -27,12 +27,14 @@ def get_models(variant='small'):
     bo = cornac.models.BaselineOnly(verbose=False)
 
     # Matrix Factorization with biases
-    mf1 = cornac.models.MF(verbose=False,
+    mf1 = cornac.models.MF(name='MF_bias',
+                           verbose=False,
                            use_bias=True,
                            seed=123)
 
     # Matrix Factorization without biases
-    mf2 = cornac.models.MF(verbose=False,
+    mf2 = cornac.models.MF(name='MF_nobias',
+                           verbose=False,
                            use_bias=False,
                            seed=123)
 
@@ -41,12 +43,14 @@ def get_models(variant='small'):
                             seed=123)
 
     # Probabilistic Matrix Factorization (linear)
-    pmf1 = cornac.models.PMF(verbose=False,
+    pmf1 = cornac.models.PMF(name='PMF_linear',
+                             verbose=False,
                              variant='linear',
                              seed=123)
 
     # Probabilistic Matrix Factorization (nonlinear)
-    pmf2 = cornac.models.PMF(verbose=False,
+    pmf2 = cornac.models.PMF(name='PMF_nonlinear',
+                             verbose=False,
                              variant='non_linear',
                              seed=123)
 
@@ -119,8 +123,8 @@ def get_metrics(variant='small'):
 
     mae = cornac.metrics.MAE()
     rmse = cornac.metrics.RMSE()
-    recall = cornac.metrics.Recall(k=[5, 10, 20, 30, 100, 200, 500])
-    ndcg = cornac.metrics.NDCG(k=[5, 10, 20, 30, 100, 200, 500])
+    recall = cornac.metrics.Recall(k=[5, 10, 20, 30, 100, -1])
+    ndcg = cornac.metrics.NDCG(k=[5, 10, 20, 30, 100, -1])
     mrr = cornac.metrics.MRR()
     auc = cornac.metrics.AUC()
 

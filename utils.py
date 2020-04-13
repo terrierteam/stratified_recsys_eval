@@ -26,11 +26,11 @@ def get_models(variant='small'):
     # baseline only
     bo = cornac.models.BaselineOnly(verbose=False)
 
-    # Matrix Factorization with biases
-    mf1 = cornac.models.MF(name='MF_bias',
-                           verbose=False,
-                           use_bias=True,
-                           seed=123)
+    # # Matrix Factorization with biases
+    # mf1 = cornac.models.MF(name='MF_bias',
+    #                        verbose=False,
+    #                        use_bias=True,
+    #                        seed=123)
 
     # Matrix Factorization without biases
     mf2 = cornac.models.MF(name='MF_nobias',
@@ -64,11 +64,11 @@ def get_models(variant='small'):
                              use_bias=True,
                              seed=123)
 
-    # Non-negative Matrix Factorization (unbiased)
-    nmf2 = cornac.models.NMF(name='NMF_nobias',
-                             verbose=False,
-                             use_bias=False,
-                             seed=123)
+    # # Non-negative Matrix Factorization (unbiased)
+    # nmf2 = cornac.models.NMF(name='NMF_nobias',
+    #                          verbose=False,
+    #                          use_bias=False,
+    #                          seed=123)
 
     # Maximum Margin Matrix Factorization
     mmmf = cornac.models.MMMF(verbose=False,
@@ -116,8 +116,8 @@ def get_models(variant='small'):
     if variant == 'small':
         return [mpop, wmf]
     else:
-        return [gavg, mpop, bo, mf1, mf2, svd,
-                pmf1, pmf2, wmf, nmf1, nmf2, mmmf,
+        return [gavg, mpop, bo, mf2, svd,
+                pmf1, pmf2, wmf, nmf1, mmmf,
                 bpr, wbpr, gmf, mlp, neumf1]
 
 

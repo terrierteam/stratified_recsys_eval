@@ -1,4 +1,6 @@
 import re
+import numpy as np
+import scipy.stats
 import cornac
 
 
@@ -15,110 +17,126 @@ def natural_keys(text):
     return [atoi(c) for c in re.split(r'(\d+)', text)]
 
 
-def get_models(variant='small'):
+def mean_confidence_interval(data, confidence=0.95):
+    a = 1.0 * np.array(data)
+    n = len(a)
+    m, se = np.mean(a), scipy.stats.sem(a)
+    h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
+    return m, h  # m+-h
+
+
+def get_models(variant='small', dims=[32]):
 
     # global average baseline
-    gavg = cornac.models.GlobalAvg()
+    gavg = cornac.models.GlobalAvg(name='GA')
 
     # the most popular baseline
-    mpop = cornac.models.MostPop()
+    mpop = cornac.models.MostPop(name='MPOP')
 
     # baseline only
     bo = cornac.models.BaselineOnly(verbose=False)
 
-    # # Matrix Factorization with biases
-    # mf1 = cornac.models.MF(name='MF_bias',
-    #                        verbose=False,
-    #                        use_bias=True,
-    #                        seed=123)
-
-    # Matrix Factorization without biases
-    mf2 = cornac.models.MF(name='MF_nobias',
-                           verbose=False,
-                           use_bias=False,
-                           seed=123)
+    # Matrix Factorization
+    mf = []
+    for k in dims:
+        mf.append(cornac.models.MF(name='MF%s' % k,
+                                   k=k,
+                                   learning_rate=0.001,
+                                   early_stop=True,
+                                   verbose=False,
+                                   use_bias=False,
+                                   seed=123))
 
     # Singular Value Decomposition
-    svd = cornac.models.SVD(verbose=False,
-                            seed=123)
+    svd = []
+    for k in dims:
+        svd.append(cornac.models.SVD(name='SVD%s' % k,
+                                     k=k,
+                                     learning_rate=0.001,
+                                     verbose=False,
+                                     seed=123))
 
-    # Probabilistic Matrix Factorization (linear)
-    pmf1 = cornac.models.PMF(name='PMF_linear',
-                             verbose=False,
-                             variant='linear',
-                             seed=123)
+    # Probabilistic Matrix Factorization
+    pmf = []
+    for k in dims:
+        # linear
+        pmf.append(cornac.models.PMF(name='PMFL%s' % k,
+                                     k=k,
+                                     verbose=False,
+                                     variant='linear',
+                                     seed=123))
 
-    # Probabilistic Matrix Factorization (nonlinear)
-    pmf2 = cornac.models.PMF(name='PMF_nonlinear',
-                             verbose=False,
-                             variant='non_linear',
-                             seed=123)
+        # nonlinear
+        pmf.append(cornac.models.PMF(name='PMFNL%s' % k,
+                                     k=k,
+                                     verbose=False,
+                                     variant='non_linear',
+                                     seed=123))
 
     # Weighted Matrix Factorization
-    wmf = cornac.models.WMF(verbose=False,
-                            seed=123)
+    wmf = []
+    for k in dims:
+        wmf.append(cornac.models.WMF(name='WMF%s' % k,
+                                     k=k,
+                                     verbose=False,
+                                     seed=123))
 
     # Non-negative Matrix Factorization (biased)
-    nmf1 = cornac.models.NMF(name='NMF_bias',
-                             verbose=False,
-                             use_bias=True,
-                             seed=123)
-
-    # # Non-negative Matrix Factorization (unbiased)
-    # nmf2 = cornac.models.NMF(name='NMF_nobias',
-    #                          verbose=False,
-    #                          use_bias=False,
-    #                          seed=123)
+    nmf = []
+    for k in dims:
+        nmf.append(cornac.models.NMF(name='NMF%s' % k,
+                                     k=k,
+                                     verbose=False,
+                                     use_bias=True,
+                                     seed=123))
 
     # Maximum Margin Matrix Factorization
-    mmmf = cornac.models.MMMF(verbose=False,
-                              seed=123)
+    mmmf = []
+    for k in dims:
+        mmmf.append(cornac.models.MMMF(name='MMMF%s' % k,
+                                       k=k,
+                                       verbose=False,
+                                       seed=123))
 
     # Bayesian Personalized Ranking
-    bpr = cornac.models.BPR(verbose=False,
-                            seed=123)
+    bpr = []
+    for k in dims:
+        bpr.append(cornac.models.BPR(name='BPR%s' % k,
+                                     k=k,
+                                     verbose=False,
+                                     seed=123))
 
-    # Indexable Bayesian Personalized Ranking
-    # ibpr = cornac.models.IBPR(verbose=False)
-
-    # Weighted Bayesian Personalized Ranking
-    wbpr = cornac.models.WBPR(verbose=False,
-                              seed=123)
+        # Weighted Bayesian Personalized Ranking
+        bpr.append(cornac.models.WBPR(name='WBPR%s' % k,
+                                      k=k,
+                                      verbose=False,
+                                      seed=123))
 
     # Generalized Matrix Factorization
-    gmf = cornac.models.GMF(verbose=False,
-                            seed=123)
+    gmf = []
+    for k in dims:
+        gmf.append(cornac.models.GMF(name='GMF%s' % k,
+                                     num_factors=k,
+                                     verbose=False,
+                                     seed=123))
 
     # Multi-Layer Perceptron
-    mlp = cornac.models.MLP(verbose=False,
+    mlp = cornac.models.MLP(name='MLP',
+                            verbose=False,
                             seed=123)
 
     # Neural Collaborative Filtering
-    neumf1 = cornac.models.NeuMF(verbose=False,
-                                 seed=123)
-
-    # Neural Collaborative Filtering
-    # neumf2 = cornac.models.NeuMF(name="NeuMF_pretrained",
-    #                              learner="adam",
-    #                              num_epochs=1,
-    #                              batch_size=256,
-    #                              lr=0.001,
-    #                              num_neg=50,
-    #                              seed=123,
-    #                              num_factors=gmf.num_factors,
-    #                              layers=mlp.layers,
-    #                              act_fn=mlp.act_fn).pretrain(gmf, mlp)
-
-    # Variational Autoencoder for Collaborative Filtering
-    # vaecf = cornac.models.VAECF(verbose=False,
-    #                             seed=123)
+    neumf = []
+    for k in dims:
+        neumf.append(cornac.models.NeuMF(name='NeuMF%s' % k,
+                                         num_factors=k,
+                                         verbose=False,
+                                         seed=123))
 
     if variant == 'small':
-        return [mpop, wmf]
+        return [mpop] + wmf
     else:
-        return [gavg, mpop, bo, mf2, svd,
-                pmf1, pmf2, wmf, nmf1, mmmf,
-                bpr, wbpr, gmf, mlp, neumf1]
+        return [gavg, mpop, bo, mlp] + mf + svd + pmf + wmf + mmmf + bpr + gmf + neumf
 
 
 def get_metrics(variant='small'):

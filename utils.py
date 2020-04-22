@@ -144,6 +144,7 @@ def get_metrics(variant='small'):
     mae = cornac.metrics.MAE()
     rmse = cornac.metrics.RMSE()
     recall = cornac.metrics.Recall(k=[5, 10, 20, 30, 100])
+    precision = cornac.metrics.Precision(k=[5, 10, 20, 30, 100])
     ndcg = cornac.metrics.NDCG(k=[5, 10, 20, 30, 100, -1])
     mrr = cornac.metrics.MRR()
     auc = cornac.metrics.AUC()
@@ -151,4 +152,4 @@ def get_metrics(variant='small'):
     if variant == 'small':
         return [ndcg]
     else:
-        return [mae, rmse, recall, ndcg, auc, mrr]
+        return [recall, ndcg, mrr, precision]

@@ -25,7 +25,14 @@ class STResult(list):
         data, index, sizes = [], [], []
         for f, r in enumerate(self):
             data.append([r.metric_avg_results[m] for m in headers])
-            index.append('Q%d' % f)
+            if f == 0:
+                index.append('Closed')
+            elif f == 1:
+                index.append('IPS')
+            elif f == 2:
+                index.append('SNIPS')
+            else:
+                index.append('Q%d' % (f - 2))
             sizes.append(r.metric_avg_results['SIZE'])
 
         # add mean and std rows (total accumulative)
@@ -35,7 +42,7 @@ class STResult(list):
         # add unbiased stratified evaluation
         weights = np.asarray(sizes) / sizes[0]
         unbiased = np.average(
-            data[1:], axis=0, weights=weights[1:]) * sum(weights[1:])
+            data[3:], axis=0, weights=weights[3:]) * sum(weights[3:])
 
         # weighted average does not meaningful for size
         for idx, header in enumerate(headers):
@@ -54,4 +61,4 @@ class STResult(list):
                            metric_user_results=None))
 
         self.table = _table_format(
-            data, headers, index, h_bars=[1, 2, len(data)])
+            data, headers, index, h_bars=[1, 2, 4, len(data)])

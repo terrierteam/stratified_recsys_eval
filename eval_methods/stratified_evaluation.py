@@ -1,18 +1,136 @@
 import time
 import powerlaw
+import tqdm
 
 import numpy as np
 import pandas as pd
 
 from collections import defaultdict
+from collections import OrderedDict
 
 from cornac.utils import get_rng
 from cornac.utils.common import safe_indexing
 from cornac.data import Dataset
 from cornac.eval_methods.base_method import BaseMethod
 from cornac.eval_methods.ratio_split import RatioSplit
+from cornac.eval_methods.base_method import rating_eval
+from cornac.experiment.result import Result
 
 from experiment.result import STResult
+
+
+def ranking_eval(
+    model,
+    metrics,
+    train_set,
+    test_set,
+    val_set=None,
+    rating_threshold=1.0,
+    exclude_unknowns=True,
+    verbose=False,
+    props=None,
+    self_normalized=True,
+):
+    """Evaluate model on provided ranking metrics.
+    Parameters
+    ----------
+    model: :obj:`cornac.models.Recommender`, required
+        Recommender model to be evaluated.
+    metrics: :obj:`iterable`, required
+        List of rating metrics :obj:`cornac.metrics.RankingMetric`.
+    train_set: :obj:`cornac.data.Dataset`, required
+        Dataset to be used for model training. This will be used to exclude
+        observations already appeared during training.
+    test_set: :obj:`cornac.data.Dataset`, required
+        Dataset to be used for evaluation.
+    val_set: :obj:`cornac.data.Dataset`, optional, default: None
+        Dataset to be used for model selection. This will be used to exclude
+        observations already appeared during validation.
+    rating_threshold: float, optional, default: 1.0
+        The threshold to convert ratings into positive or negative feedback.
+    exclude_unknowns: bool, optional, default: True
+        Ignore unknown users and items during evaluation.
+    verbose: bool, optional, default: False
+        Output evaluation progress.
+    props: dictionary, optional, default: None
+        items propensity scores
+    self_normalized: bool, optional, default: True
+        if True, self-normalize IPS scores (SNIPS)
+    Returns
+    -------
+    res: (List, List)
+        Tuple of two lists:
+         - average result for each of the metrics
+         - average result per user for each of the metrics
+    """
+
+    if len(metrics) == 0:
+        return [], []
+
+    avg_results = []
+    user_results = [{} for _ in enumerate(metrics)]
+
+    gt_mat = test_set.csr_matrix
+    train_mat = train_set.csr_matrix
+    val_mat = None if val_set is None else val_set.csr_matrix
+
+    def pos_items(csr_row):
+        return [
+            item_idx
+            for (item_idx, rating) in zip(csr_row.indices, csr_row.data)
+            if rating >= rating_threshold
+        ]
+
+    for user_idx in tqdm.tqdm(test_set.user_indices, disable=not verbose, miniters=100):
+        test_pos_items = pos_items(gt_mat.getrow(user_idx))
+        if len(test_pos_items) == 0:
+            continue
+
+        u_gt_pos = np.zeros(test_set.num_items, dtype=np.float)
+        u_gt_pos[test_pos_items] = 1
+
+        val_pos_items = [] if val_mat is None else pos_items(
+            val_mat.getrow(user_idx))
+        train_pos_items = (
+            []
+            if train_set.is_unk_user(user_idx)
+            else pos_items(train_mat.getrow(user_idx))
+        )
+
+        u_gt_neg = np.ones(test_set.num_items, dtype=np.int)
+        u_gt_neg[test_pos_items + val_pos_items + train_pos_items] = 0
+
+        item_indices = None if exclude_unknowns else np.arange(
+            test_set.num_items)
+        item_rank, item_scores = model.rank(user_idx, item_indices)
+
+        total_pi = 0.0
+        if props is not None:
+            for idx, e in enumerate(u_gt_pos):
+                if e > 0 and props[str(idx)] > 0:
+                    u_gt_pos[idx] /= props[str(idx)]
+                    total_pi += (1 / props[str(idx)])
+
+        for i, mt in enumerate(metrics):
+            mt_score = mt.compute(
+                gt_pos=u_gt_pos,
+                gt_neg=u_gt_neg,
+                pd_rank=item_rank,
+                pd_scores=item_scores,
+            )
+
+            if props is not None and self_normalized is True:
+                if total_pi > 0:
+                    mt_score /= total_pi
+
+            user_results[i][user_idx] = mt_score
+
+    # avg results of ranking metrics
+    for i, mt in enumerate(metrics):
+        avg_results.append(
+            sum(user_results[i].values()) / len(user_results[i]))
+
+    return avg_results, user_results
 
 
 class StratifiedEvaluation(BaseMethod):
@@ -75,6 +193,39 @@ class StratifiedEvaluation(BaseMethod):
         self.train_size, self.val_size, self.test_size = RatioSplit.validate_size(
             val_size, test_size, len(self._data))
         self._split()
+
+    def _eval(self, model, test_set, val_set, user_based, props=None, self_normalized=True):
+
+        metric_avg_results = OrderedDict()
+        metric_user_results = OrderedDict()
+
+        avg_results, user_results = rating_eval(
+            model=model,
+            metrics=self.rating_metrics,
+            test_set=test_set,
+            user_based=user_based,
+        )
+        for i, mt in enumerate(self.rating_metrics):
+            metric_avg_results[mt.name] = avg_results[i]
+            metric_user_results[mt.name] = user_results[i]
+
+        avg_results, user_results = ranking_eval(
+            model=model,
+            metrics=self.ranking_metrics,
+            train_set=self.train_set,
+            test_set=test_set,
+            val_set=val_set,
+            rating_threshold=self.rating_threshold,
+            exclude_unknowns=self.exclude_unknowns,
+            verbose=self.verbose,
+            props=props,
+            self_normalized=self_normalized
+        )
+        for i, mt in enumerate(self.ranking_metrics):
+            metric_avg_results[mt.name] = avg_results[i]
+            metric_user_results[mt.name] = user_results[i]
+
+        return Result(model.name, metric_avg_results, metric_user_results)
 
     def _split(self):
         data_idx = self.rng.permutation(len(self._data))
@@ -286,17 +437,45 @@ class StratifiedEvaluation(BaseMethod):
         if self.verbose:
             print("\n[{}] Evaluation started!".format(model.name))
 
-        # evaluate on the sampled test set
-        start = time.time()
+        # evaluate on the sampled test set (closed-loop)
         test_result = self._eval(
             model=model,
             test_set=self.test_set,
             val_set=self.val_set,
             user_based=user_based,
         )
-        test_time = time.time() - start
         test_result.metric_avg_results["SIZE"] = self.test_set.num_ratings
         result.append(test_result)
+
+        if self.verbose:
+            print("\n[{}] IPS Evaluation started!".format(model.name))
+
+        # evaluate based on Inverse Propensity Scoring
+        ips_result = self._eval(
+            model=model,
+            test_set=self.test_set,
+            val_set=self.val_set,
+            user_based=user_based,
+            props=self.props,
+            self_normalized=False
+        )
+        ips_result.metric_avg_results["SIZE"] = self.test_set.num_ratings
+        result.append(ips_result)
+
+        if self.verbose:
+            print("\n[{}] SNIPS Evaluation started!".format(model.name))
+
+        # evaluate based on Self-Normalized Inverse Propensity Scoring
+        snips_result = self._eval(
+            model=model,
+            test_set=self.test_set,
+            val_set=self.val_set,
+            user_based=user_based,
+            props=self.props,
+            self_normalized=True
+        )
+        snips_result.metric_avg_results["SIZE"] = self.test_set.num_ratings
+        result.append(snips_result)
 
         if self.verbose:
             print("\n[{}] Stratified Evaluation started!".format(model.name))

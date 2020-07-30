@@ -9,7 +9,7 @@ The following folders extends different parts of the [Cornac framework](https://
 * `eval_methods`: contains `stratified_evaluation.py` which is the implementation of the proposed propensity-based stratified evaluation method.
 * `experiment`: contains `experiment.py` and `result.py` which is the representation of the stratified evaluation method.
 * `dataset`: contains two files (`yahoo_music.py` and `coats.py`) to load the Yahoo! and Coat datasets.
-* `data`: contains different data files including `exp_open_[dataset].pkl` and `exp_stra_[dataset].pkl` which stores all the results. You can load these files to reproduce the results instead of learning all 104 models.
+* `data`: contains different data files including `exp_open_[dataset].pkl` and `exp_stra_[dataset].pkl` which stores all the results. You can load these files to reproduce the results instead of learning all 104 models. Download the required files from [here](http://www.dcs.gla.ac.uk/~craigm/recsys_simpsons/).
 
 Notebooks are available to reproduce the results on [MovieLens](experiments_ml.ipynb), [Yahoo!](experiments_yahoo.ipynb) and [Coat](experiments_coat.ipynb) datasets.
 
